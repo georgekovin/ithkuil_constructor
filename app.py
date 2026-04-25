@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
@@ -108,6 +108,12 @@ def generate_random_word():
 def health_check():
     """Проверка работоспособности сервиса"""
     return jsonify({"status": "ok"})
+
+
+@app.route('/', methods=['GET'])
+def home():
+    """Домашняя страница с формами для работы с слогами"""
+    return render_template('index.html')
 
 
 if __name__ == '__main__':
