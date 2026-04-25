@@ -1,0 +1,245 @@
+--- templates/index.html (原始)
+
+
++++ templates/index.html (修改后)
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор слов из слогов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #2196F3;
+        }
+        button.secondary:hover {
+            background-color: #1976D2;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        .word-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1b5e20;
+            margin: 10px 0;
+        }
+        .syllables-list {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        .error h3 {
+            color: #c62828;
+        }
+        .help-text {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔤 Конструктор слов из слогов</h1>
+
+    <div class="container">
+        <h2>Собрать слово из слогов</h2>
+        <form id="buildWordForm">
+            <div class="form-group">
+                <label for="syllablesInput">Введите слоги (через запятую или пробел):</label>
+                <input type="text" id="syllablesInput" placeholder="ка, ле, ма" required>
+                <p class="help-text">Пример: ка, ле, ма или ка ле ма</p>
+            </div>
+            <button type="submit">Собрать слово</button>
+            <button type="button" class="secondary" onclick="loadSyllables()">Загрузить список слогов</button>
+        </form>
+        <div id="buildResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Сгенерировать случайное слово</h2>
+        <form id="generateWordForm">
+            <div class="form-group">
+                <label for="lengthInput">Количество слогов (1-10):</label>
+                <input type="number" id="lengthInput" min="1" max="10" value="3" required>
+            </div>
+            <button type="submit">Сгенерировать</button>
+        </form>
+        <div id="generateResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Доступные слоги</h2>
+        <div id="syllablesList">
+            <p>Нажмите кнопку "Загрузить список слогов" выше, чтобы увидеть все доступные слоги.</p>
+        </div>
+    </div>
+
+    <script>
+        // Обработка формы сборки слова
+        document.getElementById('buildWordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const input = document.getElementById('syllablesInput').value;
+            // Разделяем по запятой или пробелу, убираем пустые элементы
+            const syllables = input.split(/[\s,]+/).filter(s => s.trim() !== '');
+
+            if (syllables.length === 0) {
+                showResult('buildResult', 'Ошибка', 'Введите хотя бы один слог', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/build-word', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ syllables: syllables })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('buildResult', 'Результат',
+                        `<div class="word-display">${data.word}</div>
+                         <div class="syllables-list">Слоги: ${data.syllables_used.join(' + ')}</div>
+                         <div class="syllables-list">Количество слогов: ${data.syllables_count}</div>`
+                    );
+                } else {
+                    showResult('buildResult', 'Ошибка', data.error, true);
+                }
+            } catch (error) {
+                showResult('buildResult', 'Ошибка', 'Не удалось соединиться с сервером: ' + error.message, true);
+            }
+        });
+
+        // Обработка формы генерации случайного слова
+        document.getElementById('generateWordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const length = parseInt(document.getElementById('lengthInput').value);
+
+            if (length < 1 || length > 10) {
+                showResult('generateResult', 'Ошибка', 'Количество слогов должно быть от 1 до 10', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/generate-random-word', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ length: length })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('generateResult', 'Результат',
+                        `<div class="word-display">${data.word}</div>
+                         <div class="syllables-list">Слоги: ${data.syllables_used.join(' + ')}</div>
+                         <div class="syllables-list">Количество слогов: ${data.syllables_count}</div>`
+                    );
+                } else {
+                    showResult('generateResult', 'Ошибка', data.error, true);
+                }
+            } catch (error) {
+                showResult('generateResult', 'Ошибка', 'Не удалось соединиться с сервером: ' + error.message, true);
+            }
+        });
+
+        // Загрузка списка слогов
+        async function loadSyllables() {
+            try {
+                const response = await fetch('/api/syllables');
+                const data = await response.json();
+
+                if (response.ok) {
+                    const syllablesHtml = data.syllables.map(s =>
+                        `<span style="display:inline-block;background:#e3f2fd;padding:5px 10px;margin:5px;border-radius:15px;font-size:14px;">${s}</span>`
+                    ).join('');
+
+                    document.getElementById('syllablesList').innerHTML =
+                        `<div style="line-height:2;">${syllablesHtml}</div>
+                         <p style="margin-top:15px;color:#666;">Всего слогов: ${data.syllables.length}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('syllablesList').innerHTML =
+                    `<p style="color:red;">Ошибка загрузки: ${error.message}</p>`;
+            }
+        }
+
+        // Функция отображения результатов
+        function showResult(elementId, title, content, isError = false) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.className = 'result' + (isError ? ' error' : '');
+            resultDiv.innerHTML = `
+                <h3>${title}</h3>
+                ${content}
+            `;
+        }
+    </script>
+</body>
+</html>
