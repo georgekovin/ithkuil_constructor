@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
@@ -9,6 +9,12 @@ SYLLABLES = [
     "ря", "лё", "мё", "дэ", "рэ", "лэ", "ма", "ди", "ри", "ли",
     "ко", "ле", "ме", "де", "ре", "ло", "мы", "ды", "ры", "лы"
 ]
+
+
+@app.route('/', methods=['GET'])
+def home():
+    return render_template("index.html")
+
 
 
 @app.route('/api/syllables', methods=['GET'])
