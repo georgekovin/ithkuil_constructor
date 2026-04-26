@@ -1,9 +1,7 @@
---- templates/index.html (原始)
-
-
-+++ templates/index.html (修改后)
 <!DOCTYPE html>
 <html lang="ru">
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -99,6 +97,8 @@
         }
     </style>
 </head>
+
+
 <body>
     <h1>🔤 Конструктор слов из слогов</h1>
 
@@ -114,132 +114,13 @@
             <button type="button" class="secondary" onclick="loadSyllables()">Загрузить список слогов</button>
         </form>
         <div id="buildResult"></div>
+        <p>Результат функции: {{ result }}</p>
     </div>
 
-    <div class="container">
-        <h2>Сгенерировать случайное слово</h2>
-        <form id="generateWordForm">
-            <div class="form-group">
-                <label for="lengthInput">Количество слогов (1-10):</label>
-                <input type="number" id="lengthInput" min="1" max="10" value="3" required>
-            </div>
-            <button type="submit">Сгенерировать</button>
-        </form>
-        <div id="generateResult"></div>
-    </div>
+    
 
-    <div class="container">
-        <h2>Доступные слоги</h2>
-        <div id="syllablesList">
-            <p>Нажмите кнопку "Загрузить список слогов" выше, чтобы увидеть все доступные слоги.</p>
-        </div>
-    </div>
 
-    <script>
-        // Обработка формы сборки слова
-        document.getElementById('buildWordForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
 
-            const input = document.getElementById('syllablesInput').value;
-            // Разделяем по запятой или пробелу, убираем пустые элементы
-            const syllables = input.split(/[\s,]+/).filter(s => s.trim() !== '');
 
-            if (syllables.length === 0) {
-                showResult('buildResult', 'Ошибка', 'Введите хотя бы один слог', true);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/build-word', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ syllables: syllables })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    showResult('buildResult', 'Результат',
-                        `<div class="word-display">${data.word}</div>
-                         <div class="syllables-list">Слоги: ${data.syllables_used.join(' + ')}</div>
-                         <div class="syllables-list">Количество слогов: ${data.syllables_count}</div>`
-                    );
-                } else {
-                    showResult('buildResult', 'Ошибка', data.error, true);
-                }
-            } catch (error) {
-                showResult('buildResult', 'Ошибка', 'Не удалось соединиться с сервером: ' + error.message, true);
-            }
-        });
-
-        // Обработка формы генерации случайного слова
-        document.getElementById('generateWordForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const length = parseInt(document.getElementById('lengthInput').value);
-
-            if (length < 1 || length > 10) {
-                showResult('generateResult', 'Ошибка', 'Количество слогов должно быть от 1 до 10', true);
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/generate-random-word', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ length: length })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    showResult('generateResult', 'Результат',
-                        `<div class="word-display">${data.word}</div>
-                         <div class="syllables-list">Слоги: ${data.syllables_used.join(' + ')}</div>
-                         <div class="syllables-list">Количество слогов: ${data.syllables_count}</div>`
-                    );
-                } else {
-                    showResult('generateResult', 'Ошибка', data.error, true);
-                }
-            } catch (error) {
-                showResult('generateResult', 'Ошибка', 'Не удалось соединиться с сервером: ' + error.message, true);
-            }
-        });
-
-        // Загрузка списка слогов
-        async function loadSyllables() {
-            try {
-                const response = await fetch('/api/syllables');
-                const data = await response.json();
-
-                if (response.ok) {
-                    const syllablesHtml = data.syllables.map(s =>
-                        `<span style="display:inline-block;background:#e3f2fd;padding:5px 10px;margin:5px;border-radius:15px;font-size:14px;">${s}</span>`
-                    ).join('');
-
-                    document.getElementById('syllablesList').innerHTML =
-                        `<div style="line-height:2;">${syllablesHtml}</div>
-                         <p style="margin-top:15px;color:#666;">Всего слогов: ${data.syllables.length}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('syllablesList').innerHTML =
-                    `<p style="color:red;">Ошибка загрузки: ${error.message}</p>`;
-            }
-        }
-
-        // Функция отображения результатов
-        function showResult(elementId, title, content, isError = false) {
-            const resultDiv = document.getElementById(elementId);
-            resultDiv.className = 'result' + (isError ? ' error' : '');
-            resultDiv.innerHTML = `
-                <h3>${title}</h3>
-                ${content}
-            `;
-        }
-    </script>
 </body>
 </html>
